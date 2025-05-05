@@ -14,3 +14,32 @@
   get_url: 
     url: https://download.docker.com/linux/ubuntu/gpg
     dest: /etc/apt/keyrings/docker.asc
+
+- name: check architecture
+  shell: dpkg --print-architecture
+  register: architecture
+
+- name: check os-version
+  shell: . /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}"
+  register: version
+
+
+- name: set list
+  lineinfile:
+    dest: /etc/apt/sources.list.d/docker.list
+    backup: yes
+    create: yes
+    line: 'deb [arch={{architecture.stdout_lines[0]}} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{version.stdout_lines[0]}} stable'
+
+- name: apt update
+  apt:
+    update_cache: yes
+
+- name: apt install docker
+  apt:
+    name:
+      - docker-ce 
+      - docker-ce-cli 
+      - containerd.io 
+      - docker-buildx-plugin 
+      - docker-compose-plugin
